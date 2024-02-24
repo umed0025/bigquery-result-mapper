@@ -4,6 +4,8 @@ import com.google.cloud.bigquery.FieldList
 import com.google.cloud.bigquery.FieldValue
 import com.google.cloud.bigquery.FieldValueList
 import com.google.common.base.CaseFormat
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.primaryConstructor
@@ -17,6 +19,7 @@ class BigQueryResultMapper {
         LongConverter.to to LongConverter,
         DoubleConverter.to to DoubleConverter,
         BooleanConverter.to to BooleanConverter,
+        OffsetDateTimeConverter.to to OffsetDateTimeConverter,
     )
 
     fun <T : Any> map(fromSchema: FieldList, fromRow: FieldValueList, to: KClass<T>): T {
@@ -104,6 +107,13 @@ object BooleanConverter : Converter<Boolean>(Boolean::class) {
     }
 }
 
+object OffsetDateTimeConverter : Converter<OffsetDateTime>(OffsetDateTime::class) {
+    override fun convert(fromColumn: FieldValue): OffsetDateTime? {
+        return fromColumn.nullableOffsetDateTimeValue
+    }
+}
+
+
 val FieldValue.nullableStringValue
     get() = if (this.isNull) null else this.stringValue
 val FieldValue.nullableLongValue
@@ -117,3 +127,7 @@ val FieldValue.nullableDoubleValue
 val FieldValue.nullableBooleanValue
     get() = if (this.isNull) null else this.booleanValue
 
+val FieldValue.offsetDateTimeValue: OffsetDateTime
+    get() = OffsetDateTime.ofInstant(this.timestampInstant, ZoneOffset.UTC)
+val FieldValue.nullableOffsetDateTimeValue
+    get() = if (this.isNull) null else this.offsetDateTimeValue
