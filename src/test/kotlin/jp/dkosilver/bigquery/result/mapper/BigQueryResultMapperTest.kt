@@ -40,7 +40,7 @@ class BigQueryResultMapperTest {
         @ParameterizedTest(name = "expected = {3}")
         @MethodSource("convertTestPattern")
         fun test(fromSchema: FieldList, fromRow: FieldValueList, to: KClass<*>, expected: Any) {
-            val result = BigQueryResultMapperWorkAround().map(fromSchema, fromRow, to)
+            val result = BigQueryResultMapper().map(fromSchema, fromRow, to)
             assertEquals(expected, result)
         }
 
@@ -239,7 +239,7 @@ class BigQueryResultMapperTest {
         @ParameterizedTest(name = "expected = {3}")
         @MethodSource("ignorePattern")
         fun test(fromSchema: FieldList, fromRow: FieldValueList, to: KClass<*>, expected: Any) {
-            val result = BigQueryResultMapperWorkAround().map(fromSchema, fromRow, to)
+            val result = BigQueryResultMapper().map(fromSchema, fromRow, to)
             assertEquals(expected, result)
         }
 

@@ -9,7 +9,7 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.primaryConstructor
 
 @Suppress("DuplicatedCode")
-class BigQueryResultMapperWorkAround {
+class BigQueryResultMapper {
 
     private val converters = mapOf(
         StringConverter.to to StringConverter,
