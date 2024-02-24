@@ -271,4 +271,27 @@ class BigQueryResultMapperTest {
 
     data class WithIgnorePropertyType(val value: String, @BigQueryMapperIgnoreField val ignoreField: String = "default")
 
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class SpecifyingTheColumnNameTest {
+        @ParameterizedTest(name = "expected = {3}")
+        @MethodSource("specifyingTheColumnNamePatten")
+        fun test(fromSchema: FieldList, fromRow: FieldValueList, to: KClass<*>, expected: Any) {
+            val result = BigQueryResultMapper().map(fromSchema, fromRow, to)
+            assertEquals(expected, result)
+        }
+
+        private fun specifyingTheColumnNamePatten() = listOf(
+            // formatter:off
+            arguments(
+                FieldList.of(Field.of("value", LegacySQLTypeName.STRING)),
+                FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.PRIMITIVE, "string value 1"))),
+                SpecifyingTheColumnNameType::class,
+                SpecifyingTheColumnNameType("string value 1"),
+            ),
+            // formatter:on
+        )
+    }
+
+    data class SpecifyingTheColumnNameType(@BigQueryColumn("value") val otherFiledName: String)
 }
