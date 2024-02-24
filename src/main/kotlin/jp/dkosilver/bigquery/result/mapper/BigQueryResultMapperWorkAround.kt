@@ -51,8 +51,12 @@ class BigQueryResultMapperWorkAround {
                         // 構造体でない場合
                         throw IllegalArgumentException("not found convert type=${parameter.type}")
                     } else {
-                        // 構造体の場合
-                        map(columnSchema, columnValue.recordValue, parameterClassifier)
+                        if (columnValue.value == null) {
+                            null
+                        } else {
+                            // 構造体の場合
+                            map(columnSchema, columnValue.recordValue, parameterClassifier)
+                        }
                     }
                 }
             }
