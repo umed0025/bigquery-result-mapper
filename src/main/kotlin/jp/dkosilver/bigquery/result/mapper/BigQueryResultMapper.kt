@@ -4,6 +4,8 @@ import com.google.cloud.bigquery.FieldList
 import com.google.cloud.bigquery.FieldValue
 import com.google.cloud.bigquery.FieldValueList
 import com.google.common.base.CaseFormat
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.primaryConstructor
@@ -11,14 +13,16 @@ import kotlin.reflect.full.primaryConstructor
 @Suppress("DuplicatedCode")
 class BigQueryResultMapper {
 
-    private val converters = mapOf(
-        StringConverter.to to StringConverter,
-        IntConverter.to to IntConverter,
-        LongConverter.to to LongConverter,
-        DoubleConverter.to to DoubleConverter,
-        BooleanConverter.to to BooleanConverter,
+    private val converters = listOf(
+        StringConverter,
+        IntConverter,
+        LongConverter,
+        DoubleConverter,
+        BooleanConverter,
+        OffsetDateTimeConverter,
     )
 
+    private val convertersMap = converters.associateBy { it.to }
     fun <T : Any> map(fromSchema: FieldList, fromRow: FieldValueList, to: KClass<T>): T {
         val from = FieldValueList.of(fromRow, fromSchema)
         if (!to.isData) throw IllegalArgumentException("to class is not data class.")
@@ -36,14 +40,14 @@ class BigQueryResultMapper {
                 val columnSchema = fromSchema[fromName].subFields
                 val columnValue = from[fromName]
                 val parameterClassifier = parameter.type.classifier as KClass<*>
-                if (converters.containsKey(parameterClassifier)) {
-                    converters[parameterClassifier]?.convert(columnValue)
+                if (convertersMap.containsKey(parameterClassifier)) {
+                    convertersMap[parameterClassifier]?.convert(columnValue)
                 } else {
                     if (parameterClassifier == List::class) {
                         val nestedClassifier = parameter.type.arguments.first().type?.classifier as KClass<*>
-                        if (columnSchema == null && converters.containsKey(nestedClassifier)) {
+                        if (columnSchema == null && convertersMap.containsKey(nestedClassifier)) {
                             // 構造体でない場合
-                            columnValue.repeatedValue.map { converters[nestedClassifier]?.convert(it) }
+                            columnValue.repeatedValue.map { convertersMap[nestedClassifier]?.convert(it) }
                         } else {
                             // 構造体の場合
                             columnValue.repeatedValue.map { map(columnSchema, it.recordValue, nestedClassifier) }
@@ -104,6 +108,13 @@ object BooleanConverter : Converter<Boolean>(Boolean::class) {
     }
 }
 
+object OffsetDateTimeConverter : Converter<OffsetDateTime>(OffsetDateTime::class) {
+    override fun convert(fromColumn: FieldValue): OffsetDateTime? {
+        return fromColumn.nullableOffsetDateTimeValue
+    }
+}
+
+
 val FieldValue.nullableStringValue
     get() = if (this.isNull) null else this.stringValue
 val FieldValue.nullableLongValue
@@ -117,3 +128,7 @@ val FieldValue.nullableDoubleValue
 val FieldValue.nullableBooleanValue
     get() = if (this.isNull) null else this.booleanValue
 
+val FieldValue.offsetDateTimeValue: OffsetDateTime
+    get() = OffsetDateTime.ofInstant(this.timestampInstant, ZoneOffset.UTC)
+val FieldValue.nullableOffsetDateTimeValue
+    get() = if (this.isNull) null else this.offsetDateTimeValue

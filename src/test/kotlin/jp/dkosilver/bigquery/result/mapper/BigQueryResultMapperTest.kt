@@ -8,6 +8,8 @@ import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlin.reflect.KClass
 
 // BigQuery での カラムと result のマッピング
@@ -106,6 +108,18 @@ class BigQueryResultMapperTest {
                 FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.PRIMITIVE, null))),
                 BooleanType::class,
                 BooleanType(null),
+            ),
+            arguments(
+                FieldList.of(Field.of("value", LegacySQLTypeName.TIMESTAMP)),
+                FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.PRIMITIVE, "1708753724.001234"))),
+                OffsetDateTimeType::class,
+                OffsetDateTimeType(OffsetDateTime.of(2024, 2, 24, 5, 48, 44, 1234000, ZoneOffset.UTC)),
+            ),
+            arguments(
+                FieldList.of(Field.of("value", LegacySQLTypeName.TIMESTAMP)),
+                FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.PRIMITIVE, null))),
+                OffsetDateTimeType::class,
+                OffsetDateTimeType(null),
             ),
             arguments(
                 FieldList.of(Field.of("value", LegacySQLTypeName.STRING)),
@@ -227,8 +241,8 @@ class BigQueryResultMapperTest {
     data class LongType(val value: Long?)
     data class DoubleType(val value: Double?)
     data class BooleanType(val value: Boolean?)
+    data class OffsetDateTimeType(val value: OffsetDateTime?)
     data class ListStringType(val value: List<String>?)
-
     data class ChildType(val value: Child?)
     data class Child(val intValue: Int, val stringValue: String)
     data class ListChildType(val value: List<Child>)
@@ -257,4 +271,27 @@ class BigQueryResultMapperTest {
 
     data class WithIgnorePropertyType(val value: String, @BigQueryMapperIgnoreField val ignoreField: String = "default")
 
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class SpecifyingTheColumnNameTest {
+        @ParameterizedTest(name = "expected = {3}")
+        @MethodSource("specifyingTheColumnNamePatten")
+        fun test(fromSchema: FieldList, fromRow: FieldValueList, to: KClass<*>, expected: Any) {
+            val result = BigQueryResultMapper().map(fromSchema, fromRow, to)
+            assertEquals(expected, result)
+        }
+
+        private fun specifyingTheColumnNamePatten() = listOf(
+            // formatter:off
+            arguments(
+                FieldList.of(Field.of("value", LegacySQLTypeName.STRING)),
+                FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.PRIMITIVE, "string value 1"))),
+                SpecifyingTheColumnNameType::class,
+                SpecifyingTheColumnNameType("string value 1"),
+            ),
+            // formatter:on
+        )
+    }
+
+    data class SpecifyingTheColumnNameType(@BigQueryColumn("value") val otherFiledName: String)
 }
