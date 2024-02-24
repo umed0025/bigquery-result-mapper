@@ -148,8 +148,8 @@ class BigQueryResultMapperWorkAroundTest {
                         )
                     )
                 ),
-                NestedChildType::class,
-                NestedChildType(NestedChild(1, "value2")),
+                ChildType::class,
+                ChildType(Child(1, "value2")),
             ),
             arguments(
                 FieldList.of(
@@ -160,8 +160,62 @@ class BigQueryResultMapperWorkAroundTest {
                     ),
                 ),
                 FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.PRIMITIVE, null))),
-                NestedChildType::class,
-                NestedChildType(null),
+                ChildType::class,
+                ChildType(null),
+            ),
+            arguments(
+                FieldList.of(
+                    Field.of(
+                        "value", LegacySQLTypeName.RECORD,
+                        Field.of("int_value", LegacySQLTypeName.INTEGER),
+                        Field.of("string_value", LegacySQLTypeName.STRING)
+                    ),
+                ),
+                FieldValueList.of(
+                    mutableListOf(
+                        FieldValue.of(
+                            FieldValue.Attribute.REPEATED, listOf(
+                                FieldValue.of(
+                                    FieldValue.Attribute.RECORD,
+                                    FieldValueList.of(
+                                        mutableListOf(
+                                            FieldValue.of(FieldValue.Attribute.PRIMITIVE, "10"),
+                                            FieldValue.of(FieldValue.Attribute.PRIMITIVE, "value1-2"),
+                                        )
+                                    )
+                                ),
+                                FieldValue.of(
+                                    FieldValue.Attribute.RECORD,
+                                    FieldValueList.of(
+                                        mutableListOf(
+                                            FieldValue.of(FieldValue.Attribute.PRIMITIVE, "20"),
+                                            FieldValue.of(FieldValue.Attribute.PRIMITIVE, "value2-2"),
+                                        )
+                                    )
+                                ),
+                            )
+                        )
+                    )
+                ),
+                ListChildType::class,
+                ListChildType(
+                    listOf(
+                        Child(10, "value1-2"),
+                        Child(20, "value2-2")
+                    )
+                ),
+            ),
+            arguments(
+                FieldList.of(
+                    Field.of(
+                        "value", LegacySQLTypeName.RECORD,
+                        Field.of("int_value", LegacySQLTypeName.INTEGER),
+                        Field.of("string_value", LegacySQLTypeName.STRING)
+                    ),
+                ),
+                FieldValueList.of(mutableListOf(FieldValue.of(FieldValue.Attribute.REPEATED, emptyList<FieldValue>()))),
+                ListChildType::class,
+                ListChildType(emptyList()),
             ),
             // formatter:on
         )
@@ -174,8 +228,9 @@ class BigQueryResultMapperWorkAroundTest {
     data class BooleanType(val value: Boolean?)
     data class ListStringType(val value: List<String>?)
 
-    data class NestedChildType(val value: NestedChild?)
-    data class NestedChild(val intValue: Int, val stringValue: String)
+    data class ChildType(val value: Child?)
+    data class Child(val intValue: Int, val stringValue: String)
+    data class ListChildType(val value: List<Child>)
 
 
 }

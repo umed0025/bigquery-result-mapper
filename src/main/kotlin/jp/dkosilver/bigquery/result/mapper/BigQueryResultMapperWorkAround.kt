@@ -44,7 +44,7 @@ class BigQueryResultMapperWorkAround {
                         columnValue.repeatedValue.map { converters[nestedClassifier]?.convert(it) }
                     } else {
                         // 構造体の場合
-                        columnValue.repeatedValue.map { map(fromSchema, it.recordValue, nestedClassifier) }
+                        columnValue.repeatedValue.map { map(columnSchema, it.recordValue, nestedClassifier) }
                     }
                 } else {
                     if (columnSchema == null) {
