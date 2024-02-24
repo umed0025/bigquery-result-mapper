@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
-class BigQueryResultMapperTest {
+class BigQueryResultMapperWorkAroundTest {
     // BigQuery での カラムと result のマッピング
     // name=string_value, type=STRING
     // attribute=PRIMITIVE, value=string value 11, value type=class kotlin.String
@@ -22,8 +22,11 @@ class BigQueryResultMapperTest {
     // name=array_string_value, type=STRING
     // attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=array string value1}, FieldValue{attribute=PRIMITIVE, value=array string value 2}], value type=class com.google.cloud.bigquery.FieldValueList
     // name=struct_string_string_value, type=RECORD
+    // sub_field name=nested_string_value, type=STRING
+    // sub_field name=nested_int_value, type=INTEGER
     // attribute=RECORD, value=[FieldValue{attribute=PRIMITIVE, value=nested string value 1}, FieldValue{attribute=PRIMITIVE, value=1}], value type=class com.google.cloud.bigquery.FieldValueList
     // name=array_struct_string_value, type=RECORD
+    // sub_field name=array_struct_string_value, type=STRING
     // attribute=REPEATED, value=[FieldValue{attribute=RECORD, value=[FieldValue{attribute=PRIMITIVE, value=array struct string value1}]}, FieldValue{attribute=RECORD, value=[FieldValue{attribute=PRIMITIVE, value=array struct string value2}]}], value type=class com.google.cloud.bigquery.FieldValueList
 
     @Test
@@ -31,7 +34,20 @@ class BigQueryResultMapperTest {
     fun test() {
         // given
         // when
-        val from = FieldValueList.of(
+        val fromSchema = FieldList.of(
+            Field.of("string_value", LegacySQLTypeName.STRING),
+            Field.of("int_value", LegacySQLTypeName.INTEGER),
+            Field.of("long_value", LegacySQLTypeName.INTEGER),
+            Field.of("double_value", LegacySQLTypeName.FLOAT),
+            Field.of("boolean_value", LegacySQLTypeName.BOOLEAN),
+            Field.of("nullable_string_value", LegacySQLTypeName.STRING),
+            Field.of("nullable_int_value", LegacySQLTypeName.INTEGER),
+            Field.of("nullable_long_value", LegacySQLTypeName.INTEGER),
+            Field.of("nullable_double_value", LegacySQLTypeName.FLOAT),
+            Field.of("nullable_boolean_value", LegacySQLTypeName.BOOLEAN),
+        )
+
+        val fromRow = FieldValueList.of(
             mutableListOf(
                 FieldValue.of(FieldValue.Attribute.PRIMITIVE, "string value 1"),
                 FieldValue.of(FieldValue.Attribute.PRIMITIVE, "${Int.MAX_VALUE}"),
@@ -44,21 +60,9 @@ class BigQueryResultMapperTest {
                 FieldValue.of(FieldValue.Attribute.PRIMITIVE, null),
                 FieldValue.of(FieldValue.Attribute.PRIMITIVE, null),
             ),
-            FieldList.of(
-                Field.of("string_value", LegacySQLTypeName.STRING),
-                Field.of("int_value", LegacySQLTypeName.INTEGER),
-                Field.of("long_value", LegacySQLTypeName.INTEGER),
-                Field.of("double_value", LegacySQLTypeName.FLOAT),
-                Field.of("boolean_value", LegacySQLTypeName.BOOLEAN),
-                Field.of("nullable_string_value", LegacySQLTypeName.STRING),
-                Field.of("nullable_int_value", LegacySQLTypeName.INTEGER),
-                Field.of("nullable_long_value", LegacySQLTypeName.INTEGER),
-                Field.of("nullable_double_value", LegacySQLTypeName.FLOAT),
-                Field.of("nullable_boolean_value", LegacySQLTypeName.BOOLEAN),
-            )
         )
-        val testTarget = BigQueryResultMapper()
-        val actual = testTarget.map(from, DataClassModel::class)
+        val testTarget = BigQueryResultMapperWorkAround()
+        val actual = testTarget.map(fromSchema, fromRow, DataClassModel::class)
         // then
         val expected = DataClassModel(
             "string value 1",
@@ -88,6 +92,4 @@ class BigQueryResultMapperTest {
         val nullableDoubleValue: Double?,
         val nullableBooleanValue: Boolean?,
     )
-
 }
-
