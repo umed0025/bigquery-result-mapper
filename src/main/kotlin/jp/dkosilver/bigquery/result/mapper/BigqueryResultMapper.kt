@@ -10,6 +10,7 @@ import kotlin.reflect.full.primaryConstructor
 annotation class BigQueryColumn(val value: String)
 class BigQueryResultMapper {
 
+    @Suppress("DuplicatedCode")
     fun <T : Any> map(from: FieldValueList, to: KClass<T>): T {
         if (!to.isData) throw IllegalArgumentException("to class is not data class.")
         val constructor = to.primaryConstructor ?: throw IllegalArgumentException("not found primary constructor")
@@ -22,7 +23,7 @@ class BigQueryResultMapper {
                 CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, parameterName)
             }
             val fromFieldValue = from[fromName]
-            when (parameter.type.classifier) {
+            when (val parameterClassifier = parameter.type.classifier as KClass<*>) {
                 // FIXME
                 String::class -> fromFieldValue.nullableStringValue
                 Int::class -> fromFieldValue.nullableIntValue
@@ -30,8 +31,15 @@ class BigQueryResultMapper {
                 Double::class -> fromFieldValue.nullableDoubleValue
                 Boolean::class -> fromFieldValue.nullableBooleanValue
                 // TODO add local date time
+                // TODO add list type
                 // TODO create can not find converter exception.
-                else -> throw java.lang.IllegalArgumentException("not found convert type=${parameter.type}")
+                else -> {
+                    if (parameterClassifier.isData) {
+                        fromFieldValue?.let { map(fromFieldValue.recordValue, parameterClassifier) }
+                    } else {
+                        throw java.lang.IllegalArgumentException("not found convert type=${parameter.type}")
+                    }
+                }
             }
         }
         return constructor.callBy(parameterArgs)
